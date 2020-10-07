@@ -6,15 +6,10 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"
+#include "weather.h"
 
 #define TAG "NVS"
 
-typedef struct weather_struct 
-{
-    float temp;
-    float humidity;
-    int id;
-} Weather;
 
 
 
