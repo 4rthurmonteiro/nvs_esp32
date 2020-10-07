@@ -14,10 +14,14 @@ void app_main()
 
     vTaskDelay(1000 / portTICK_PERIOD_MS);
 
-    ESP_ERROR_CHECK(nvs_flash_init());
+    ESP_ERROR_CHECK(nvs_flash_init_partition("MyNvs"));
 
     nvs_handle_t handle;
-    ESP_ERROR_CHECK(nvs_open("store", NVS_READWRITE, &handle));
+    ESP_ERROR_CHECK(nvs_open_from_partition("MyNvs", "store", NVS_READWRITE, &handle));
+
+    nvs_stats_t nvsStats;
+    nvs_get_stats("MyNvs", &nvsStats);
+    ESP_LOGI(TAG, "used: %d, free: %d, total: %d, namespace count: %d", nvsStats.used_entries, nvsStats.free_entries, nvsStats.total_entries, nvsStats.namespace_count);
 
     int32_t val = 0;
     esp_err_t result = nvs_get_i32(handle, "val", &val);
