@@ -9,6 +9,15 @@
 
 #define TAG "NVS"
 
+typedef struct weather_struct 
+{
+    float temp;
+    float humidity;
+    int id;
+} Weather;
+
+
+
 void app_main()
 {
 
@@ -17,31 +26,43 @@ void app_main()
     ESP_ERROR_CHECK(nvs_flash_init_partition("MyNvs"));
 
     nvs_handle_t handle;
-    ESP_ERROR_CHECK(nvs_open_from_partition("MyNvs", "store", NVS_READWRITE, &handle));
+    ESP_ERROR_CHECK(nvs_open_from_partition("MyNvs", "weather_store", NVS_READWRITE, &handle));
 
-    nvs_stats_t nvsStats;
-    nvs_get_stats("MyNvs", &nvsStats);
-    ESP_LOGI(TAG, "used: %d, free: %d, total: %d, namespace count: %d", nvsStats.used_entries, nvsStats.free_entries, nvsStats.total_entries, nvsStats.namespace_count);
+    char weatherKey[20];
+    Weather weather;
+    size_t weatherSize = sizeof(Weather);
 
-    int32_t val = 0;
-    esp_err_t result = nvs_get_i32(handle, "val", &val);
-
-    switch(result)
+    for (int i = 0; i < 5; i++)
     {
-        case ESP_ERR_NOT_FOUND:
-            ESP_LOGE(TAG, "Value not set yet");
-            break;
-        case ESP_OK:
-            ESP_LOGI(TAG, "Value is %d", val);
-            break;
-        default:
-            ESP_LOGE(TAG, "Error (%s) opening NVS handle!\n", esp_err_to_name(result));
-            break;
+        sprintf(weatherKey, "weather_%d", i);
+        esp_err_t result = nvs_get_blob(handle, weatherKey, (void *) &weather, &weatherSize);
+        switch(result)
+        {
+            case ESP_ERR_NOT_FOUND:
+            case ESP_ERR_NVS_NOT_FOUND:
+                ESP_LOGE(TAG, "Value not set yet");
+                break;
+            case ESP_OK:
+                ESP_LOGI(TAG, "Weather temperature: %.2f, humidity: %.2f, id: %d\n", weather.temp, weather.humidity, weather.id);
+                break;
+            default:
+                ESP_LOGE(TAG, "Error (%s) opening NVS handle!\n", esp_err_to_name(result));
+                break;
+        }
     }
 
-    val++;
+    for (int i = 0; i < 5; i++)
+    {
+        sprintf(weatherKey, "weather_%d", i);
+        Weather newWeather;
 
-    ESP_ERROR_CHECK(nvs_set_i32(handle, "val", val));
-    ESP_ERROR_CHECK(nvs_commit(handle));
+        newWeather.temp = 28.9;
+        newWeather.humidity = 89.1;
+        newWeather.id = i;
+
+        ESP_ERROR_CHECK(nvs_set_blob(handle, weatherKey, (void *) &newWeather, weatherSize));
+        ESP_ERROR_CHECK(nvs_commit(handle));        
+    }
+
     nvs_close(handle);
 }
